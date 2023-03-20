@@ -36,7 +36,7 @@ func (a App) Run(v turbine.Turbine) error {
 
 	res := v.Process(rr, Anonymize{})
 
-	dest, err := v.Resources("seconds3")
+	dest, err := v.Resources("pg_db")
 	if err != nil {
 		return err
 	}
