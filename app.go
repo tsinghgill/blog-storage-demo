@@ -52,6 +52,8 @@ func (a App) Run(v turbine.Turbine) error {
 type Anonymize struct{}
 
 func (f Anonymize) Process(stream []turbine.Record) []turbine.Record {
+	var outputStream []turbine.Record
+
 	webhookURL := "https://webhook.site/ac38ce4e-c50a-4a56-b098-8b038890d94f"
 	baseURL := "https://meroxas3bucket.s3.us-east-2.amazonaws.com/"
 
@@ -117,7 +119,56 @@ func (f Anonymize) Process(stream []turbine.Record) []turbine.Record {
 
 		// Print a message indicating that the record was successfully posted to webhook.site
 		fmt.Printf("Successfully posted Record %d to webhook.site\n", i+1)
+
+		// Create the desired schema and payload structures
+		schema := map[string]interface{}{
+			"type":     "struct",
+			"fields":   []interface{}{},
+			"optional": false,
+			"name":     "resource.public.collection_name.Envelope",
+		}
+
+		newPayload := map[string]interface{}{
+			"before": nil,
+			"after":  map[string]interface{}{},
+		}
+
+		// Add the 'url' field to the schema and payload
+		field := map[string]interface{}{
+			"type":     "struct",
+			"fields":   []map[string]interface{}{{"field": "url", "optional": false, "type": "string"}},
+			"optional": false,
+			"name":     "resource.public.collection_name.Value",
+		}
+
+		schema["fields"] = []interface{}{field, field}
+		newPayload["after"] = map[string]interface{}{"url": fullURL}
+
+		// Create a new turbine.Record object with the desired structure
+		newRecord := turbine.Record{
+			Key:       record.Key,
+			Payload:   []byte{},
+			Timestamp: record.Timestamp,
+		}
+
+		// Encode the new schema and payload as JSON
+		newValue := map[string]interface{}{
+			"schema":  schema,
+			"payload": newPayload,
+		}
+
+		jsonValue, err := json.Marshal(newValue)
+		if err != nil {
+			fmt.Printf("Error marshalling new value in record: %v\n", err)
+			continue
+		}
+
+		// Set the new record's Payload to the encoded JSON value
+		newRecord.Payload = jsonValue
+
+		// Add the new record to the outputStream
+		outputStream = append(outputStream, newRecord)
 	}
 
-	return stream
+	return outputStream
 }
