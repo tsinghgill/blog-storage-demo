@@ -5,6 +5,7 @@ import (
 
 	// Dependencies of Turbine
 
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 
@@ -21,63 +22,25 @@ var _ turbine.App = (*App)(nil)
 type App struct{}
 
 func (a App) Run(v turbine.Turbine) error {
-	// To configure your data stores as resources on the Meroxa Platform
-	// use the Meroxa Dashboard, CLI, or Meroxa Terraform Provider.
-	// For more details refer to: https://docs.meroxa.com/
-	//
-	// Identify an upstream data store for your data app
-	// with the `Resources` function
-	// Replace `source_name` with the resource name the
-	// data store was configured with on Meroxa.
 
 	source, err := v.Resources("meroxas3")
 	if err != nil {
 		return err
 	}
 
-	// Specify which upstream records to pull
-	// with the `Records` function
-	// Replace `collection_name` with a table, collection,
-	// or bucket name in your data store.
-	// If a configuration is needed for your source,
-	// you can pass it as a second argument to the `Records` function. For example:
-	//
-	// source.Records("collection_name", turbine.ConnectionOptions{turbine.ResourceConfig{Field: "incrementing.field.name", Value:"id"}})
-
 	rr, err := source.Records("meroxas3bucket", nil)
 	if err != nil {
 		return err
 	}
 
-	// Specify what code to execute against upstream records
-	// with the `Process` function
-	// Replace `Anonymize` with the name of your function code.
-
 	res := v.Process(rr, Anonymize{})
-
-	// Identify a downstream data store for your data app
-	// with the `Resources` function
-	// Replace `destination_name` with the resource name the
-	// data store was configured with on Meroxa.
 
 	dest, err := v.Resources("seconds3")
 	if err != nil {
 		return err
 	}
 
-	// Specify where to write records downstream
-	// using the `Write` function
-	// Replace `collection_archive` with a table, collection,
-	// or bucket name in your data store.
-	// If a configuration is needed, you can also use i.e.
-	//
-	// dest.WriteWithConfig(
-	//  res,
-	//  "my-archive",
-	//  turbine.ConnectionOptions{turbine.ResourceConfig{Field: "buffer.flush.time", Value: "10"}}
-	// )
-
-	err = dest.Write(res, "tanveets3")
+	err = dest.Write(res, "imagesfrommeroxas3bucket")
 	if err != nil {
 		return err
 	}
@@ -96,14 +59,26 @@ func (f Anonymize) Process(stream []turbine.Record) []turbine.Record {
 			continue
 		}
 
-		// Log out the JSON representation of the record
+		// Decode the base64-encoded payload
+		var key struct {
+			Schema  struct{} `json:"schema"`
+			Payload string   `json:"payload"`
+		}
+		if err := json.Unmarshal([]byte(record.Key), &key); err != nil {
+			fmt.Printf("Error decoding payload in record %d: %v\n", i+1, err)
+			continue
+		}
+		payload, err := base64.StdEncoding.DecodeString(key.Payload)
+		if err != nil {
+			fmt.Printf("Error decoding payload in record%d: %v\n", i+1, err)
+			continue
+		}
+
+		// Log out the record and decoded payload
 		fmt.Printf("Record %d:\n", i+1)
 		fmt.Println(string(recordJSON))
+		fmt.Printf("Decoded Payload for Record %d:\n", i+1)
+		fmt.Println(string(payload))
 	}
 	return stream
 }
-
-// func consistentHash(s string) string {
-// 	h := md5.Sum([]byte(s))
-// 	return hex.EncodeToString(h[:])
-// }
