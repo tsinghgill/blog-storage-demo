@@ -4,6 +4,10 @@ import (
 	// Dependencies of the example data app
 
 	// Dependencies of Turbine
+
+	"encoding/json"
+	"fmt"
+
 	"github.com/meroxa/turbine-go"
 	"github.com/meroxa/turbine-go/runner"
 )
@@ -84,20 +88,18 @@ func (a App) Run(v turbine.Turbine) error {
 type Anonymize struct{}
 
 func (f Anonymize) Process(stream []turbine.Record) []turbine.Record {
-	// for i, record := range stream {
-	// 	email := fmt.Sprintf("%s", record.Payload.Get("after.customer_email"))
-	// 	if email == "" {
-	// 		log.Printf("unable to find customer_email value in record %d\n", i)
-	// 		break
-	// 	}
-	// 	hashedEmail := consistentHash(email)
-	// 	err := record.Payload.Set("after.customer_email", hashedEmail)
-	// 	if err != nil {
-	// 		log.Println("error setting value: ", err)
-	// 		continue
-	// 	}
-	// 	stream[i] = record
-	// }
+	for i, record := range stream {
+		// Convert the record struct to a JSON object
+		recordJSON, err := json.MarshalIndent(record, "", "  ")
+		if err != nil {
+			fmt.Printf("Error converting record %d to JSON: %v\n", i+1, err)
+			continue
+		}
+
+		// Log out the JSON representation of the record
+		fmt.Printf("Record %d:\n", i+1)
+		fmt.Println(string(recordJSON))
+	}
 	return stream
 }
 
