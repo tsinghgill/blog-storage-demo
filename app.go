@@ -30,7 +30,10 @@ func (a App) Run(v turbine.Turbine) error {
 		return err
 	}
 
-	rr, err := source.Records("meroxas3bucket", nil)
+	rr, err := source.Records("meroxas3bucket",
+		turbine.ConnectionOptions{
+			{Field: "compress", Value: "true"},
+		})
 	if err != nil {
 		return err
 	}
@@ -64,7 +67,7 @@ func (f Anonymize) Process(stream []turbine.Record) []turbine.Record {
 			Schema  struct{} `json:"schema"`
 			Payload string   `json:"payload"`
 		}
-		if err := json.Unmarshal([]byte(record.Key), &key); err != nil {
+		if err := json.Unmarshal([]byte(record.Key), &key); err != nil { // Key, Payload, Timestamp
 			fmt.Printf("Error decoding payload in record %d: %v\n", i+1, err)
 			continue
 		}
@@ -74,15 +77,43 @@ func (f Anonymize) Process(stream []turbine.Record) []turbine.Record {
 			continue
 		}
 
+		var OpPayload struct {
+			Schema  struct{} `json:"schema"`
+			Payload string   `json:"payload"`
+		}
+		if err := json.Unmarshal([]byte(record.Payload), &OpPayload); err != nil {
+			fmt.Printf("Error decoding payload in record %d: %v\n", i+1, err)
+			continue
+		}
+		opPayload, err := base64.StdEncoding.DecodeString(OpPayload.Payload)
+		if err != nil {
+			fmt.Printf("Error decoding payload in record%d: %v\n", i+1, err)
+			continue
+		}
+
+		var innerPayload map[string]interface{}
+
+		if err := json.Unmarshal(opPayload, &innerPayload); err != nil {
+			fmt.Printf("Error decoding payload in record%d: %v\n", i+1, err)
+			continue
+		}
+
 		// Log out the decoded payload
 		fmt.Printf("Decoded Payload for Record %d:\n", i+1)
 		fmt.Println(string(payload))
 
+		fmt.Printf("[opPayload] Decoded opPayload for Record %d:\n", i+1)
+		fmt.Println(string(opPayload))
+
+		fmt.Printf("[innerPayload] Decoded innerPayload for Record %d:\n", i+1)
+		fmt.Println(innerPayload)
+
 		// Construct the full URL by concatenating the baseURL and the decoded payload
 		fullURL := baseURL + string(payload)
+		operation := string(innerPayload["op"].(string))
 
 		// Create a map with a single key-value pair, where the key is "url" and the value is the fullURL
-		postData := map[string]string{"url": fullURL}
+		postData := map[string]string{"url": fullURL, "operation": operation}
 
 		// Marshal the postData map into JSON data
 		jsonData, err := json.Marshal(postData)
