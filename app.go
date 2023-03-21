@@ -93,6 +93,19 @@ func (f Anonymize) Process(stream []turbine.Record) []turbine.Record {
 		fullURL := baseURL + string(keyPayload)
 		operation := recordPayloadUnmarshalled["payload"].(map[string]interface{})["op"].(string)
 
+		switch operation {
+		case "c":
+			operation = "CREATE"
+		case "u":
+			operation = "UPDATE"
+		case "d":
+			operation = "DELETE"
+		case "r":
+			operation = "SNAPSHOT"
+		default:
+			operation = "UNKNOWN"
+		}
+
 		// Create a map with a single key-value pair, where the key is "url" and the value is the fullURL
 		postData := map[string]string{"url": fullURL, "operation": operation}
 
