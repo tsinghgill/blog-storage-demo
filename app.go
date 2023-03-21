@@ -62,7 +62,6 @@ func (f Anonymize) Process(stream []turbine.Record) []turbine.Record {
 	baseURL := "https://meroxas3bucket.s3.us-east-2.amazonaws.com/"
 
 	for i, record := range stream {
-		fmt.Println(">>>>>>>>>>> record >>>>>>>>>>>>>>", record)
 		// Decode the base64-encoded payload
 		var key struct {
 			Schema  struct{} `json:"schema"`
@@ -87,33 +86,12 @@ func (f Anonymize) Process(stream []turbine.Record) []turbine.Record {
 			fmt.Printf("Error Unmarshalling recordPayloadUnmarshalled in record%d: %v\n", i+1, err)
 			continue
 		}
-		fmt.Printf("recordPayloadUnmarshalled >>> %+v", recordPayloadUnmarshalled)
-		fmt.Printf("recordPayloadUnmarshalled.op >>> %s", recordPayloadUnmarshalled["payload"].(map[string]interface{})["op"].(string))
-
-		recordPayloadDecoded, err := base64.StdEncoding.DecodeString(string(record.Payload))
-		fmt.Printf("[recordPayloadDecoded] Decoded record.Payload for Record %s:\n", recordPayloadDecoded)
-
-		fmt.Printf("base64.StdEncoding.DecodeString >>> %s", string(record.Payload))
-		var OpPayload struct {
-			Schema  struct{} `json:"schema"`
-			Payload string   `json:"payload"`
-		}
-		if err := json.Unmarshal([]byte(record.Payload), &OpPayload); err != nil {
-			fmt.Printf("Error Unmarshalling OpPayload in record %d: %v\n", i+1, err)
-			continue
-		}
-		opPayload, err := base64.StdEncoding.DecodeString(OpPayload.Payload)
-		fmt.Printf("[opPayload] Decoded opPayload for Record %d:\n", i+1)
-		fmt.Println(string(opPayload))
-
-		if err != nil {
-			fmt.Printf("Error decoding OpPayload.Payload in record%d: %v\n", i+1, err)
-			continue
-		}
+		// fmt.Printf("recordPayloadUnmarshalled >>> %+v\n", recordPayloadUnmarshalled)
+		fmt.Printf("recordPayloadUnmarshalled.op >>> %s\n", recordPayloadUnmarshalled["payload"].(map[string]interface{})["op"].(string))
 
 		// Construct the full URL by concatenating the baseURL and the decoded payload
 		fullURL := baseURL + string(keyPayload)
-		operation := string(recordPayloadUnmarshalled["payload"].(map[string]interface{})["op"].(string))
+		operation := recordPayloadUnmarshalled["payload"].(map[string]interface{})["op"].(string)
 
 		// Create a map with a single key-value pair, where the key is "url" and the value is the fullURL
 		postData := map[string]string{"url": fullURL, "operation": operation}
@@ -135,9 +113,10 @@ func (f Anonymize) Process(stream []turbine.Record) []turbine.Record {
 		req.Header.Set("Content-Type", "application/json")
 
 		// Create an HTTP client with a 10-second timeout
-		client := &http.Client{Timeout: time.Second * 10}
+		client := &http.Client{Timeout: time.Second * 3}
 
 		// Send the POST request using the client
+		fmt.Printf("Sending req to webhook.site: %v\n", req)
 		resp, err := client.Do(req)
 		if err != nil {
 			fmt.Printf("Error sending request for record %d: %v\n", i+1, err)
@@ -160,6 +139,10 @@ func (f Anonymize) Process(stream []turbine.Record) []turbine.Record {
 			"url": kcschema.Field{
 				Type:  kcschema.StringField,
 				Value: fullURL,
+			},
+			"operation": kcschema.Field{
+				Type:  kcschema.StringField,
+				Value: operation,
 			},
 		}
 
