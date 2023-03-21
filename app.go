@@ -111,18 +111,9 @@ func (f Anonymize) Process(stream []turbine.Record) []turbine.Record {
 			continue
 		}
 
-		var innerPayload map[string]interface{}
-
-		if err := json.Unmarshal(opPayload, &innerPayload); err != nil {
-			fmt.Printf("Error Unmarshalling innerPayload in record%d: %v\n", i+1, err)
-			continue
-		}
-		fmt.Printf("[innerPayload] Decoded innerPayload for Record %d:\n", i+1)
-		fmt.Println(innerPayload)
-
 		// Construct the full URL by concatenating the baseURL and the decoded payload
-		fullURL := baseURL + string(payload)
-		operation := string(innerPayload["op"].(string))
+		fullURL := baseURL + string(keyPayload)
+		operation := string(recordPayloadUnmarshalled["payload"].(map[string]interface{})["op"].(string))
 
 		// Create a map with a single key-value pair, where the key is "url" and the value is the fullURL
 		postData := map[string]string{"url": fullURL, "operation": operation}
