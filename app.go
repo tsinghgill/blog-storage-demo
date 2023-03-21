@@ -68,12 +68,12 @@ func (f Anonymize) Process(stream []turbine.Record) []turbine.Record {
 			Payload string   `json:"payload"`
 		}
 		if err := json.Unmarshal([]byte(record.Key), &key); err != nil { // Key, Payload, Timestamp
-			fmt.Printf("Error decoding payload in record %d: %v\n", i+1, err)
+			fmt.Printf("Error Unmarshalling key in record %d: %v\n", i+1, err)
 			continue
 		}
 		payload, err := base64.StdEncoding.DecodeString(key.Payload)
 		if err != nil {
-			fmt.Printf("Error decoding payload in record%d: %v\n", i+1, err)
+			fmt.Printf("Error decoding key.Payload in record%d: %v\n", i+1, err)
 			continue
 		}
 
@@ -82,19 +82,19 @@ func (f Anonymize) Process(stream []turbine.Record) []turbine.Record {
 			Payload string   `json:"payload"`
 		}
 		if err := json.Unmarshal([]byte(record.Payload), &OpPayload); err != nil {
-			fmt.Printf("Error decoding payload in record %d: %v\n", i+1, err)
+			fmt.Printf("Error Unmarshalling OpPayload in record %d: %v\n", i+1, err)
 			continue
 		}
 		opPayload, err := base64.StdEncoding.DecodeString(OpPayload.Payload)
 		if err != nil {
-			fmt.Printf("Error decoding payload in record%d: %v\n", i+1, err)
+			fmt.Printf("Error decoding OpPayload.Payload in record%d: %v\n", i+1, err)
 			continue
 		}
 
 		var innerPayload map[string]interface{}
 
 		if err := json.Unmarshal(opPayload, &innerPayload); err != nil {
-			fmt.Printf("Error decoding payload in record%d: %v\n", i+1, err)
+			fmt.Printf("Error Unmarshalling innerPayload in record%d: %v\n", i+1, err)
 			continue
 		}
 
