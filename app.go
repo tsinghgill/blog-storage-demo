@@ -82,7 +82,13 @@ func (f Anonymize) Process(stream []turbine.Record) []turbine.Record {
 			continue
 		}
 
-		fmt.Printf("record.Payload >>> %s", string(record.Payload))
+		var recordPayloadUnmarshalled map[string]interface{}
+
+		if err := json.Unmarshal(record.Payload, &recordPayloadUnmarshalled); err != nil {
+			fmt.Printf("Error Unmarshalling recordPayloadUnmarshalled in record%d: %v\n", i+1, err)
+			continue
+		}
+		fmt.Printf("recordPayloadUnmarshalled.op >>> %s", recordPayloadUnmarshalled["op"].(string))
 
 		recordPayloadDecoded, err := base64.StdEncoding.DecodeString(string(record.Payload))
 		fmt.Printf("[recordPayloadDecoded] Decoded record.Payload for Record %s:\n", recordPayloadDecoded)
