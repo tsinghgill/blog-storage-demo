@@ -83,6 +83,11 @@ func (f Anonymize) Process(stream []turbine.Record) []turbine.Record {
 		}
 
 		fmt.Printf("record.Payload >>> %s", string(record.Payload))
+
+		recordPayloadDecoded, err := base64.StdEncoding.DecodeString(string(record.Payload))
+		fmt.Printf("[recordPayloadDecoded] Decoded record.Payload for Record %s:\n", recordPayloadDecoded)
+
+		fmt.Printf("base64.StdEncoding.DecodeString >>> %s", string(record.Payload))
 		var OpPayload struct {
 			Schema  struct{} `json:"schema"`
 			Payload string   `json:"payload"`
