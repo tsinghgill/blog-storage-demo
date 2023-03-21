@@ -73,9 +73,9 @@ func (f Anonymize) Process(stream []turbine.Record) []turbine.Record {
 			continue
 		}
 
-		payload, err := base64.StdEncoding.DecodeString(key.Payload)
-		// Log out the decoded payload
-		fmt.Printf("Decoded Payload for Record %s:", string(payload))
+		keyPayload, err := base64.StdEncoding.DecodeString(key.Payload)
+		// Log out the decoded keyPayload
+		fmt.Printf("Decoded keyPayload for Record %s:", string(keyPayload))
 		if err != nil {
 			fmt.Printf("Error decoding key.Payload in record%d: %v\n", i+1, err)
 			continue
@@ -88,7 +88,7 @@ func (f Anonymize) Process(stream []turbine.Record) []turbine.Record {
 			continue
 		}
 		fmt.Printf("recordPayloadUnmarshalled >>> %+v", recordPayloadUnmarshalled)
-		fmt.Printf("recordPayloadUnmarshalled.op >>> %s", recordPayloadUnmarshalled["op"].(string))
+		fmt.Printf("recordPayloadUnmarshalled.op >>> %s", recordPayloadUnmarshalled["payload"].(map[string]interface{})["op"].(string))
 
 		recordPayloadDecoded, err := base64.StdEncoding.DecodeString(string(record.Payload))
 		fmt.Printf("[recordPayloadDecoded] Decoded record.Payload for Record %s:\n", recordPayloadDecoded)
