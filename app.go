@@ -105,6 +105,8 @@ func (f Transform) Process(stream []turbine.Record) []turbine.Record {
 	return outputStream
 }
 
+// Helper Functions
+
 func decodeKeyPayload(recordKey []byte) (string, error) {
 	var key struct {
 		Schema  struct{} `json:"schema"`
