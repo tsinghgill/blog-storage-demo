@@ -62,6 +62,7 @@ func (f Anonymize) Process(stream []turbine.Record) []turbine.Record {
 	baseURL := "https://meroxas3bucket.s3.us-east-2.amazonaws.com/"
 
 	for i, record := range stream {
+		fmt.Println(">>>>>>>>>>> record >>>>>>>>>>>>>>", record)
 		// Decode the base64-encoded payload
 		var key struct {
 			Schema  struct{} `json:"schema"`
