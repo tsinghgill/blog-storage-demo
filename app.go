@@ -10,6 +10,7 @@ import (
 	"time"
 
 	// Dependencies of Turbine
+	"github.com/ahamidi/kcschema"
 	"github.com/meroxa/turbine-go"
 	"github.com/meroxa/turbine-go/runner"
 )
@@ -121,50 +122,26 @@ func (f Anonymize) Process(stream []turbine.Record) []turbine.Record {
 		fmt.Printf("Successfully posted Record %d to webhook.site\n", i+1)
 
 		// Create the desired schema and payload structures
-		schema := map[string]interface{}{
-			"type":     "struct",
-			"fields":   []interface{}{},
-			"optional": false,
-			"name":     "resource.public.collection_name.Envelope",
+		structuredPayload := kcschema.StructuredPayload{
+			"url": kcschema.Field{
+				Type:  kcschema.StringField,
+				Value: fullURL,
+			},
 		}
 
-		newPayload := map[string]interface{}{
-			"before": nil,
-			"after":  map[string]interface{}{},
-		}
-
-		// Add the 'url' field to the schema and payload
-		field := map[string]interface{}{
-			"type":     "struct",
-			"fields":   []map[string]interface{}{{"field": "url", "optional": false, "type": "string"}},
-			"optional": false,
-			"name":     "resource.public.collection_name.Value",
-		}
-
-		schema["fields"] = []interface{}{field, field}
-		newPayload["after"] = map[string]interface{}{"url": fullURL}
-
-		// Create a new turbine.Record object with the desired structure
-		newRecord := turbine.Record{
-			Key:       record.Key,
-			Payload:   []byte{},
-			Timestamp: record.Timestamp,
-		}
-
-		// Encode the new schema and payload as JSON
-		newValue := map[string]interface{}{
-			"schema":  schema,
-			"payload": newPayload,
-		}
-
-		jsonValue, err := json.Marshal(newValue)
+		// Marshal the StructuredPayload into a JSON array of bytes using AsKCSchemaJSON
+		jsonValue, err := structuredPayload.AsKCSchemaJSON("resource.public.collection_name.Value")
 		if err != nil {
 			fmt.Printf("Error marshalling new value in record: %v\n", err)
 			continue
 		}
 
-		// Set the new record's Payload to the encoded JSON value
-		newRecord.Payload = jsonValue
+		// Create a new turbine.Record object with the desired structure
+		newRecord := turbine.Record{
+			Key:       record.Key,
+			Payload:   jsonValue,
+			Timestamp: record.Timestamp,
+		}
 
 		// Add the new record to the outputStream
 		outputStream = append(outputStream, newRecord)

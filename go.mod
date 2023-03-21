@@ -5,6 +5,7 @@ go 1.19
 require github.com/meroxa/turbine-go v1.0.0
 
 require (
+	github.com/ahamidi/kcschema v0.0.0-20220908044620-cbe0cf7bc4e6 // indirect
 	github.com/caarlos0/env/v6 v6.10.1 // indirect
 	github.com/cristalhq/jwt/v3 v3.1.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
