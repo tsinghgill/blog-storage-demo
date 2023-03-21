@@ -82,6 +82,7 @@ func (f Anonymize) Process(stream []turbine.Record) []turbine.Record {
 			continue
 		}
 
+		fmt.Printf("record.Payload >>> %s", string(record.Payload))
 		var OpPayload struct {
 			Schema  struct{} `json:"schema"`
 			Payload string   `json:"payload"`
